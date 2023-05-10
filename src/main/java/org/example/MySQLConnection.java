@@ -16,36 +16,27 @@ public class MySQLConnection {
 
     public static void main(String[] args) {
         try {
-            Connection connection = DriverManager.getConnection(DATABASE_URL, USERNAME, PASSWORD);
+            Connection connection = connectToDatabase();
             System.out.println("Database connection successful!");
 
-            // Получение списка баз данных
             List<String> databaseNames = getDatabaseNames(connection);
             System.out.println("Список баз данных: " + databaseNames);
 
-            // Выбор базы данных
-            String selectedDatabase = databaseNames.get(1); // выбираем 2. базу данных в списке
-            System.out.println("\nВыбрана база данных: " + selectedDatabase);
+            String selectedDatabase = "Eventerprise-main";
+            useDatabase(connection, selectedDatabase);
+            System.out.println("Выбрана база данных: " + selectedDatabase);
 
-            // Установка текущей базы данных
-// Установка текущей базы данных
-            try (Statement statement = connection.createStatement()) {
-                statement.execute("USE `" + selectedDatabase + "`");
-            }
-
-
-            // Получение списка таблиц и количество записей в них
+            // Получение списка таблиц и количества записей в них
             DatabaseMetaData metaData = connection.getMetaData();
             ResultSet tables = metaData.getTables(null, null, "%", new String[]{"TABLE"});
-
             System.out.println("\nСписок таблиц и количество записей в них:");
             while (tables.next()) {
                 String tableName = tables.getString("TABLE_NAME");
                 int rowCount = getTableRowCount(connection, tableName);
-                System.out.println(tableName + ": " + rowCount + " записей");
+                System.out.printf("- %s: %d%n", tableName, rowCount);
             }
-
             tables.close();
+
             connection.close();
         } catch (SQLException e) {
             System.err.println("Failed to connect to the database.");
@@ -53,7 +44,25 @@ public class MySQLConnection {
         }
     }
 
-    private static List<String> getDatabaseNames(Connection connection) throws SQLException {
+    public static Connection connectToDatabase() throws SQLException {
+        return DriverManager.getConnection(DATABASE_URL, USERNAME, PASSWORD);
+    }
+
+    public static int getTableRowCount(Connection connection, String tableName) throws SQLException {
+        int rowCount = 0;
+
+        try (Statement statement = connection.createStatement()) {
+            ResultSet resultSet = statement.executeQuery("SELECT COUNT(*) FROM `" + tableName + "`");
+            if (resultSet.next()) {
+                rowCount = resultSet.getInt(1);
+            }
+            resultSet.close();
+        }
+
+        return rowCount;
+    }
+
+    public static List<String> getDatabaseNames(Connection connection) throws SQLException {
         List<String> databaseNames = new ArrayList<>();
         try (Statement statement = connection.createStatement()) {
             ResultSet resultSet = statement.executeQuery("SHOW DATABASES");
@@ -65,18 +74,9 @@ public class MySQLConnection {
         return databaseNames;
     }
 
-    private static int getTableRowCount(Connection connection, String tableName) throws SQLException {
-        int rowCount = 0;
-
+    public static void useDatabase(Connection connection, String databaseName) throws SQLException {
         try (Statement statement = connection.createStatement()) {
-            ResultSet resultSet = statement.executeQuery("SELECT COUNT(*) FROM " + tableName);
-            if (resultSet.next()) {
-                rowCount = resultSet.getInt(1);
-            }
-            resultSet.close();
+            statement.execute("USE `" + databaseName + "`");
         }
-
-        return rowCount;
     }
-
 }
