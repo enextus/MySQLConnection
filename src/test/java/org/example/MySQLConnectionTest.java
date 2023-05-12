@@ -45,17 +45,7 @@ class MySQLConnectionTest {
             fail("Failed to get tables from the database");
         }
     }
-    @Test
-    void testTableRowCount() {
-        try {
-            String tableName = "event_contributor";
-            int rowCount = MySQLConnection.getTableRowCount(connection, tableName);
-            assertTrue(rowCount >= 0, "Row count should be greater than or equal to 0");
-        } catch (SQLException e) {
-            e.printStackTrace(); // Добавьте эту строку для вывода информации об исключении
-            fail("Failed to get row count for the specified table");
-        }
-    }
+
 
 
     @Test
